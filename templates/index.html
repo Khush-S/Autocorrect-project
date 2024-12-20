@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto-correct and Auto-suggest App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #suggestions {
+            margin-top: 10px;
+        }
+        .suggestion {
+            padding: 5px;
+            margin: 2px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Auto-correct and Auto-suggest App</h1>
+    <label for="input-sentence">Start typing a sentence:</label>
+    <textarea id="input-sentence" rows="4" cols="50" placeholder="Type something..."></textarea>
+
+    <h3>Corrected Sentence:</h3>
+    <p id="corrected-sentence"></p>
+
+    <h3>Suggested Next Words:</h3>
+    <div id="suggestions"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const inputTextArea = document.getElementById("input-sentence");
+
+            inputTextArea.addEventListener("input", function () {
+                const inputSentence = inputTextArea.value;
+
+                // Log the input sentence to the console
+                console.log("Input Sentence: " + inputSentence);
+
+                // Use fetch to send the input sentence to the Flask server
+                fetch('/autocomplete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',  // Ensure this is set correctly
+                    },
+                    body: new URLSearchParams({ 'input_sentence': inputSentence })  // Send the input sentence as form data
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Log the output (corrected sentence and suggestions) to the console
+                    console.log("Corrected Sentence: " + data.corrected_sentence);
+                    console.log("Suggestions: ", data.suggestions);
+
+                    // Update the corrected sentence
+                    document.getElementById("corrected-sentence").textContent = data.corrected_sentence;
+
+                    // Clear previous suggestions
+                    const suggestionsDiv = document.getElementById("suggestions");
+                    suggestionsDiv.innerHTML = "";
+
+                    // Display new suggestions
+                    data.suggestions.forEach(function (suggestion) {
+                        const suggestionElement = document.createElement("div");
+                        suggestionElement.classList.add("suggestion");
+                        suggestionElement.textContent = `${suggestion.word} (Probability: ${suggestion.prob.toFixed(4)})`;
+                        suggestionsDiv.appendChild(suggestionElement);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error during fetch:", error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
